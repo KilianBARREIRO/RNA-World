@@ -1,0 +1,206 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Juliano\_RNAWorld\_Draft\_020425.R},
+  pdfauthor={Kilia},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Juliano\_RNAWorld\_Draft\_020425.R}
+\author{Kilia}
+\date{2025-02-04}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#create sequence ("ACCGCUA")}
+\NormalTok{gen\_rna\_seq }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(n) \{}
+\NormalTok{  bases }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"A"}\NormalTok{, }\StringTok{"U"}\NormalTok{, }\StringTok{"C"}\NormalTok{, }\StringTok{"G"}\NormalTok{)}
+  \FunctionTok{paste0}\NormalTok{(}\FunctionTok{sample}\NormalTok{(bases, n, }\AttributeTok{replace =} \ConstantTok{TRUE}\NormalTok{), }\AttributeTok{collapse =} \StringTok{""}\NormalTok{)}
+\NormalTok{\}}
+
+\CommentTok{\# ("ACC","GUA")}
+\NormalTok{split\_into\_codons }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(sequence) \{}
+\NormalTok{  codons }\OtherTok{\textless{}{-}} \FunctionTok{substring}\NormalTok{(sequence, }\FunctionTok{seq}\NormalTok{(}\DecValTok{1}\NormalTok{, }\FunctionTok{nchar}\NormalTok{(sequence)}\SpecialCharTok{{-}}\DecValTok{2}\NormalTok{, }\AttributeTok{by=}\DecValTok{3}\NormalTok{), }\FunctionTok{seq}\NormalTok{(}\DecValTok{3}\NormalTok{, }\FunctionTok{nchar}\NormalTok{(sequence), }\AttributeTok{by=}\DecValTok{3}\NormalTok{))}
+  \FunctionTok{return}\NormalTok{(codons)}
+\NormalTok{\}}
+
+\CommentTok{\# ("Threonine","Valine")}
+\NormalTok{translate\_codon }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(codon) \{}
+\NormalTok{  genetic\_code }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}
+    \StringTok{"UUU"} \OtherTok{=} \StringTok{"Phenylalanine"}\NormalTok{, }\StringTok{"UUC"} \OtherTok{=} \StringTok{"Phenylalanine"}\NormalTok{, }\StringTok{"UUA"} \OtherTok{=} \StringTok{"Leucine"}\NormalTok{, }
+    \StringTok{"UUG"} \OtherTok{=} \StringTok{"Leucine"}\NormalTok{, }\StringTok{"CUU"} \OtherTok{=} \StringTok{"Leucine"}\NormalTok{, }\StringTok{"CUC"} \OtherTok{=} \StringTok{"Leucine"}\NormalTok{, }\StringTok{"CUA"} \OtherTok{=} \StringTok{"Leucine"}\NormalTok{, }
+    \StringTok{"CUG"} \OtherTok{=} \StringTok{"Leucine"}\NormalTok{, }\StringTok{"AUU"} \OtherTok{=} \StringTok{"Isoleucine"}\NormalTok{, }\StringTok{"AUC"} \OtherTok{=} \StringTok{"Isoleucine"}\NormalTok{, }
+    \StringTok{"AUA"} \OtherTok{=} \StringTok{"Isoleucine"}\NormalTok{, }\StringTok{"AUG"} \OtherTok{=} \StringTok{"Methionine (Start)"}\NormalTok{, }\StringTok{"GUU"} \OtherTok{=} \StringTok{"Valine"}\NormalTok{, }
+    \StringTok{"GUC"} \OtherTok{=} \StringTok{"Valine"}\NormalTok{, }\StringTok{"GUA"} \OtherTok{=} \StringTok{"Valine"}\NormalTok{, }\StringTok{"GUG"} \OtherTok{=} \StringTok{"Valine"}\NormalTok{, }\StringTok{"UCU"} \OtherTok{=} \StringTok{"Serine"}\NormalTok{, }
+    \StringTok{"UCC"} \OtherTok{=} \StringTok{"Serine"}\NormalTok{, }\StringTok{"UCA"} \OtherTok{=} \StringTok{"Serine"}\NormalTok{, }\StringTok{"UCG"} \OtherTok{=} \StringTok{"Serine"}\NormalTok{, }\StringTok{"CCU"} \OtherTok{=} \StringTok{"Proline"}\NormalTok{, }
+    \StringTok{"CCC"} \OtherTok{=} \StringTok{"Proline"}\NormalTok{, }\StringTok{"CCA"} \OtherTok{=} \StringTok{"Proline"}\NormalTok{, }\StringTok{"CCG"} \OtherTok{=} \StringTok{"Proline"}\NormalTok{, }\StringTok{"ACU"} \OtherTok{=} \StringTok{"Threonine"}\NormalTok{,}
+    \StringTok{"ACC"} \OtherTok{=} \StringTok{"Threonine"}\NormalTok{, }\StringTok{"ACA"} \OtherTok{=} \StringTok{"Threonine"}\NormalTok{, }\StringTok{"ACG"} \OtherTok{=} \StringTok{"Threonine"}\NormalTok{, }
+    \StringTok{"GCU"} \OtherTok{=} \StringTok{"Alanine"}\NormalTok{, }\StringTok{"GCC"} \OtherTok{=} \StringTok{"Alanine"}\NormalTok{, }\StringTok{"GCA"} \OtherTok{=} \StringTok{"Alanine"}\NormalTok{, }\StringTok{"GCG"} \OtherTok{=} \StringTok{"Alanine"}\NormalTok{,}
+    \StringTok{"UAU"} \OtherTok{=} \StringTok{"Tyrosine"}\NormalTok{, }\StringTok{"UAC"} \OtherTok{=} \StringTok{"Tyrosine"}\NormalTok{, }\StringTok{"UAA"} \OtherTok{=} \StringTok{"Stop"}\NormalTok{, }\StringTok{"UAG"} \OtherTok{=} \StringTok{"Stop"}\NormalTok{, }
+    \StringTok{"UGA"} \OtherTok{=} \StringTok{"Stop"}\NormalTok{, }\StringTok{"CAU"} \OtherTok{=} \StringTok{"Histidine"}\NormalTok{, }\StringTok{"CAC"} \OtherTok{=} \StringTok{"Histidine"}\NormalTok{,}
+    \StringTok{"CAA"} \OtherTok{=} \StringTok{"Glutamine"}\NormalTok{, }\StringTok{"CAG"} \OtherTok{=} \StringTok{"Glutamine"}\NormalTok{, }\StringTok{"AAU"} \OtherTok{=} \StringTok{"Asparagine"}\NormalTok{, }
+    \StringTok{"AAC"} \OtherTok{=} \StringTok{"Asparagine"}\NormalTok{, }\StringTok{"AAA"} \OtherTok{=} \StringTok{"Lysine"}\NormalTok{, }\StringTok{"AAG"} \OtherTok{=} \StringTok{"Lysine"}\NormalTok{,}
+    \StringTok{"GAU"} \OtherTok{=} \StringTok{"Aspartic Acid"}\NormalTok{, }\StringTok{"GAC"} \OtherTok{=} \StringTok{"Aspartic Acid"}\NormalTok{,  }\StringTok{"GAA"} \OtherTok{=} \StringTok{"Glutamic Acid"}\NormalTok{, }
+    \StringTok{"GAG"} \OtherTok{=} \StringTok{"Glutamic Acid"}\NormalTok{, }\StringTok{"UGU"} \OtherTok{=} \StringTok{"Cysteine"}\NormalTok{, }\StringTok{"UGC"} \OtherTok{=} \StringTok{"Cysteine"}\NormalTok{,}
+    \StringTok{"UGG"} \OtherTok{=} \StringTok{"Tryptophan"}\NormalTok{, }\StringTok{"CGU"} \OtherTok{=} \StringTok{"Arginine"}\NormalTok{, }\StringTok{"CGC"} \OtherTok{=} \StringTok{"Arginine"}\NormalTok{, }
+    \StringTok{"CGA"} \OtherTok{=} \StringTok{"Arginine"}\NormalTok{, }\StringTok{"CGG"} \OtherTok{=} \StringTok{"Arginine"}\NormalTok{, }\StringTok{"AGU"} \OtherTok{=} \StringTok{"Serine"}\NormalTok{, }\StringTok{"AGC"} \OtherTok{=} \StringTok{"Serine"}\NormalTok{,}
+    \StringTok{"AGA"} \OtherTok{=} \StringTok{"Arginine"}\NormalTok{, }\StringTok{"AGG"} \OtherTok{=} \StringTok{"Arginine"}\NormalTok{, }\StringTok{"GGU"} \OtherTok{=} \StringTok{"Glycine"}\NormalTok{, }\StringTok{"GGC"} \OtherTok{=} \StringTok{"Glycine"}\NormalTok{,}
+    \StringTok{"GGA"} \OtherTok{=} \StringTok{"Glycine"}\NormalTok{, }\StringTok{"GGG"} \OtherTok{=} \StringTok{"Glycine"}
+\NormalTok{  )}
+  \FunctionTok{return}\NormalTok{(genetic\_code[[codon]])}
+\NormalTok{\}}
+
+\CommentTok{\# (1,1)}
+\NormalTok{AA\_frequencies }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(sequence) \{}
+\NormalTok{  codons }\OtherTok{\textless{}{-}} \FunctionTok{split\_into\_codons}\NormalTok{(sequence)}
+\NormalTok{  amino\_acids }\OtherTok{\textless{}{-}} \FunctionTok{character}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+\NormalTok{  stop\_codons }\OtherTok{\textless{}{-}} \DecValTok{0}  \CommentTok{\# count stop codons}
+  
+  \ControlFlowTok{for}\NormalTok{ (codon }\ControlFlowTok{in}\NormalTok{ codons) \{}
+\NormalTok{    aa }\OtherTok{\textless{}{-}} \FunctionTok{translate\_codon}\NormalTok{(codon)}
+    \ControlFlowTok{if}\NormalTok{ (aa }\SpecialCharTok{==} \StringTok{"Stop"}\NormalTok{) \{}
+\NormalTok{      stop\_codons }\OtherTok{\textless{}{-}}\NormalTok{ stop\_codons }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{    \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{      amino\_acids }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(amino\_acids, aa)}
+\NormalTok{    \}}
+\NormalTok{  \} }
+  
+\NormalTok{  freq\_table }\OtherTok{\textless{}{-}} \FunctionTok{table}\NormalTok{(amino\_acids)}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{frequencies =}\NormalTok{ freq\_table, }\AttributeTok{stop\_codons =}\NormalTok{ stop\_codons)}
+\NormalTok{\}}
+
+\CommentTok{\# Test}
+\NormalTok{rna\_sequence }\OtherTok{\textless{}{-}} \FunctionTok{gen\_rna\_seq}\NormalTok{(}\DecValTok{300}\NormalTok{)}
+\NormalTok{result }\OtherTok{\textless{}{-}} \FunctionTok{AA\_frequencies}\NormalTok{(rna\_sequence)}
+\FunctionTok{print}\NormalTok{(result}\SpecialCharTok{$}\NormalTok{frequencies)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## amino_acids
+##            Alanine           Arginine         Asparagine      Aspartic Acid 
+##                  9                 12                  5                  4 
+##           Cysteine      Glutamic Acid          Glutamine            Glycine 
+##                  1                  1                  1                  6 
+##          Histidine         Isoleucine            Leucine             Lysine 
+##                  1                  2                 11                  1 
+## Methionine (Start)      Phenylalanine            Proline             Serine 
+##                  2                  4                  3                 13 
+##          Threonine         Tryptophan           Tyrosine             Valine 
+##                  3                  2                  3                  5
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Stop codons:"}\NormalTok{, result}\SpecialCharTok{$}\NormalTok{stop\_codons, }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Stop codons: 11
+\end{verbatim}
+
+\end{document}
