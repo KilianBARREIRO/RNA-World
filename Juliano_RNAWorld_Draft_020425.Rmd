@@ -1,16 +1,40 @@
-#create sequence ("ACCGCUA")
+---
+title: "Backdown"
+output: html_document
+date: "2025-02-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Remarks : use Biostrings or seqinr packages to lighten code
+
+```{r}
+library(tidyverse)
+library(forcats)  # Pour fct_reorder
+```
+
+
+# 1st step
+Generate the RNA sequence with differents nitrogenous bases.
+```{r}
 gen_rna_seq <- function(n) {
   bases <- c("A", "U", "C", "G")
   paste0(sample(bases, n, replace = TRUE), collapse = "")
 }
+```
 
-# ("ACC","GUA")
+Split in groups of three elements (codons)
+```{r}
 split_into_codons <- function(sequence) {
   codons <- substring(sequence, seq(1, nchar(sequence)-2, by=3), seq(3, nchar(sequence), by=3))
   return(codons)
 }
+```
 
-# ("Threonine","Valine")
+Library of AA corresponding to codons
+```{r}
 translate_codon <- function(codon) {
   genetic_code <- list(
     "UUU" = "Phenylalanine", "UUC" = "Phenylalanine", "UUA" = "Leucine", 
@@ -35,12 +59,15 @@ translate_codon <- function(codon) {
   )
   return(genetic_code[[codon]])
 }
+```
 
-# (1,1)
+Amino Acids frequencies computing
+```{r}
 AA_frequencies <- function(sequence) {
   codons <- split_into_codons(sequence)
   amino_acids <- character(0)
   stop_codons <- 0  # count stop codons
+
   
   for (codon in codons) {
     aa <- translate_codon(codon)
@@ -54,18 +81,20 @@ AA_frequencies <- function(sequence) {
   freq_table <- table(amino_acids)
   list(frequencies = freq_table, stop_codons = stop_codons)
 }
+```
 
 # Test
-rna_sequence <- gen_rna_seq(300)
+```{r}
+rna_sequence <- gen_rna_seq(1000)
 result <- AA_frequencies(rna_sequence)
 print(result$frequencies)
 cat("Stop codons:", result$stop_codons, "\n")
+```
 
-
-# Définition des longueurs de séquences et du nombre de répétitions
+# length of sequences and the repetition number of each
+```{r}
 sequence_lengths <- seq(100, 500, by=50)
 n_repeats <- 100
-
 data_list <- list()
 
 for (len in sequence_lengths) {
@@ -81,15 +110,22 @@ for (len in sequence_lengths) {
     data_list <- append(data_list, list(df))
   }
 }
+```
 
+Compute proportions, reorder data for plot
+```{r}
 final_data <- bind_rows(data_list) %>%
   group_by(Length, AminoAcid) %>%
   summarise(MeanCount = mean(Count), .groups = "drop") %>%
   group_by(Length) %>%
-  mutate(Proportion = MeanCount / sum(MeanCount))  # Normalisation correcte
+  mutate(Proportion = MeanCount / sum(MeanCount)) %>%   # Standardization
+  mutate(AminoAcid = forcats::fct_reorder(AminoAcid, Proportion, .desc = TRUE)) 
+```
+
 
 
 # Visualisation
+```{r}
 ggplot(final_data, aes(x = factor(Length), y = Proportion, fill = AminoAcid)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_viridis_d(option = "turbo") +  # Palette lisible et optimisée
@@ -107,12 +143,50 @@ ggplot(final_data, aes(x = factor(Length), y = Proportion, fill = AminoAcid)) +
     plot.title = element_text(face = "bold", hjust = 0.5)
   )
 
+```
 
-
-# Créer un tableau des valeurs
+# Table
+```{r}
 tableau_proportions <- final_data %>%
   select(Length, AminoAcid, Proportion) %>%
   tidyr::pivot_wider(names_from = AminoAcid, values_from = Proportion)
+```
 
-# Afficher le tableau
+```{r}
 print(tableau_proportions, n = Inf)
+```
+
+It seems that the result is implied by a correlation between the number of codons 
+coding for each protein, hence the following verification, where we verifiy the 
+monotonous positive relationship between these 2 variables:
+```{r}
+codon_count <- data.frame(
+  AminoAcid = c("Phenylalanine", "Leucine", "Isoleucine", "Methionine (Start)", 
+                "Valine", "Serine", "Proline", "Threonine", "Alanine", "Tyrosine",
+                "Histidine", "Glutamine", "Asparagine", "Lysine", "Aspartic Acid", 
+                "Glutamic Acid", "Cysteine", "Tryptophan", "Arginine", "Glycine"),
+  CodonNumber = c(2, 6, 3, 1, 4, 6, 4, 4, 4, 2, 
+                  2, 2, 2, 2, 2, 2, 2, 1, 6, 4)
+)
+
+final_data <- final_data %>%
+  left_join(codon_count, by = "AminoAcid")
+
+correlation_result <- cor(final_data$Proportion, final_data$CodonNumber, 
+                          method = "spearman", use = "complete.obs")
+print(paste("Spearman correlation:", round(correlation_result, 3)))
+
+ggplot(final_data, aes(x = CodonNumber, y = Proportion)) +
+  geom_point(aes(color = AminoAcid), size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  scale_color_viridis_d(option = "turbo") +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "Correlation between AA Proportion and Codon Redundancy",
+    x = "Number of Codons per Amino Acid",
+    y = "Mean Proportion",
+    color = "Amino Acid"
+  )
+
+```
+
