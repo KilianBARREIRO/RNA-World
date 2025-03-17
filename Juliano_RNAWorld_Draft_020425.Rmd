@@ -11,124 +11,41 @@ knitr::opts_chunk$set(echo = TRUE)
 Remarks : use Biostrings or seqinr packages to lighten code
 
 ```{r}
+source("functions.R")
+source("extradata.R")
+
+
 library(tidyverse)
-library(forcats)  # Pour fct_reorder
+library(forcats)  # fct_reorder
+library(tibble)
+library(data.table)
+```
+
+# We define a seq length and a number of repetitions for each sequence value
+```{r}
+A <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, n_repeats = 10)
+```
+
+Compute proportions, reorder data for plot, and add melting temperature, that 
+don't need to be added before neither in proportions nor in the repetitions
+```{r}
+
 ```
 
 
-# 1st step
-Generate the RNA sequence with differents nitrogenous bases.
 ```{r}
-gen_rna_seq <- function(n) {
-  bases <- c("A", "U", "C", "G")
-  paste0(sample(bases, n, replace = TRUE), collapse = "")
-}
-```
-
-Split in groups of three elements (codons)
-```{r}
-split_into_codons <- function(sequence) {
-  codons <- substring(sequence, seq(1, nchar(sequence)-2, by=3), seq(3, nchar(sequence), by=3))
-  return(codons)
-}
-```
-
-Library of AA corresponding to codons
-```{r}
-translate_codon <- function(codon) {
-  genetic_code <- list(
-    "UUU" = "Phenylalanine", "UUC" = "Phenylalanine", "UUA" = "Leucine", 
-    "UUG" = "Leucine", "CUU" = "Leucine", "CUC" = "Leucine", "CUA" = "Leucine", 
-    "CUG" = "Leucine", "AUU" = "Isoleucine", "AUC" = "Isoleucine", 
-    "AUA" = "Isoleucine", "AUG" = "Methionine (Start)", "GUU" = "Valine", 
-    "GUC" = "Valine", "GUA" = "Valine", "GUG" = "Valine", "UCU" = "Serine", 
-    "UCC" = "Serine", "UCA" = "Serine", "UCG" = "Serine", "CCU" = "Proline", 
-    "CCC" = "Proline", "CCA" = "Proline", "CCG" = "Proline", "ACU" = "Threonine",
-    "ACC" = "Threonine", "ACA" = "Threonine", "ACG" = "Threonine", 
-    "GCU" = "Alanine", "GCC" = "Alanine", "GCA" = "Alanine", "GCG" = "Alanine",
-    "UAU" = "Tyrosine", "UAC" = "Tyrosine", "UAA" = "Stop", "UAG" = "Stop", 
-    "UGA" = "Stop", "CAU" = "Histidine", "CAC" = "Histidine",
-    "CAA" = "Glutamine", "CAG" = "Glutamine", "AAU" = "Asparagine", 
-    "AAC" = "Asparagine", "AAA" = "Lysine", "AAG" = "Lysine",
-    "GAU" = "Aspartic Acid", "GAC" = "Aspartic Acid",  "GAA" = "Glutamic Acid", 
-    "GAG" = "Glutamic Acid", "UGU" = "Cysteine", "UGC" = "Cysteine",
-    "UGG" = "Tryptophan", "CGU" = "Arginine", "CGC" = "Arginine", 
-    "CGA" = "Arginine", "CGG" = "Arginine", "AGU" = "Serine", "AGC" = "Serine",
-    "AGA" = "Arginine", "AGG" = "Arginine", "GGU" = "Glycine", "GGC" = "Glycine",
-    "GGA" = "Glycine", "GGG" = "Glycine"
-  )
-  return(genetic_code[[codon]])
-}
-```
-
-Amino Acids frequencies computing
-```{r}
-AA_frequencies <- function(sequence) {
-  codons <- split_into_codons(sequence)
-  amino_acids <- character(0)
-  stop_codons <- 0  # count stop codons
-
+P <- ready2plot_data(A) %>%
+  left_join(MeltingTemperatureData[c(2,4)], by ="AminoAcid")
   
-  for (codon in codons) {
-    aa <- translate_codon(codon)
-    if (aa == "Stop") {
-      stop_codons <- stop_codons + 1
-    } else {
-      amino_acids <- c(amino_acids, aa)
-    }
-  } 
-  
-  freq_table <- table(amino_acids)
-  list(frequencies = freq_table, stop_codons = stop_codons)
-}
+
+print(P %>% group_by(Length) %>% slice_sample(n = 1))
 ```
-
-# Test
-```{r}
-rna_sequence <- gen_rna_seq(1000)
-result <- AA_frequencies(rna_sequence)
-print(result$frequencies)
-cat("Stop codons:", result$stop_codons, "\n")
-```
-
-# length of sequences and the repetition number of each
-```{r}
-sequence_lengths <- seq(100, 500, by=50)
-n_repeats <- 100
-data_list <- list()
-
-for (len in sequence_lengths) {
-  for (rep in 1:n_repeats) {
-    rna_sequence <- gen_rna_seq(len)
-    freq_data <- AA_frequencies(rna_sequence)
-    
-    df <- data.frame(
-      Length = len,
-      AminoAcid = names(freq_data$frequencies),
-      Count = as.numeric(freq_data$frequencies)
-    )
-    data_list <- append(data_list, list(df))
-  }
-}
-```
-
-Compute proportions, reorder data for plot
-```{r}
-final_data <- bind_rows(data_list) %>%
-  group_by(Length, AminoAcid) %>%
-  summarise(MeanCount = mean(Count), .groups = "drop") %>%
-  group_by(Length) %>%
-  mutate(Proportion = MeanCount / sum(MeanCount)) %>%   # Standardization
-  mutate(AminoAcid = forcats::fct_reorder(AminoAcid, Proportion, .desc = TRUE)) 
-```
-
-
 
 # Visualisation
 ```{r}
 ggplot(final_data, aes(x = factor(Length), y = Proportion, fill = AminoAcid)) +
   geom_bar(stat = "identity", position = "stack") +
-  scale_fill_viridis_d(option = "turbo") +  # Palette lisible et optimisée
+  scale_fill_viridis_d(option = "turbo") +  
   theme_minimal(base_size = 14) +
   labs(
     title = "Distribution of Amino Acids by Sequence Length",
@@ -143,9 +60,184 @@ ggplot(final_data, aes(x = factor(Length), y = Proportion, fill = AminoAcid)) +
     plot.title = element_text(face = "bold", hjust = 0.5)
   )
 
+
+
+
+# Plot computed temperature with AA table
+ggplot(final_data, aes(x= MeltTemp, y=Proportion)) + 
+  geom_point(aes(color = AminoAcid), size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +  
+  scale_fill_viridis_d(option = "turbo") +  
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "Distribution of Amino Acids by melting temperature",
+    x = "Melting Temperature (°C)",
+    y = "Amino Acids Proportion",
+    fill = "Amino Acids"
+  ) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
 ```
 
-# Table
+
+# Complementary Strand
+```{r}
+# Generate complementary strand and compute frequencies
+rna_complementary_seq <- gen_comp_rna_seq(rna_sequence)
+result_comp <- AA_frequencies(rna_complementary_seq)
+
+# Store complementary strand data
+data_list_comp <- list()
+for (len in sequence_lengths) {
+  for (rep in 1:n_repeats) {
+    rna_complementary_seq <- gen_comp_rna_seq(gen_rna_seq(len))
+    freq_data_comp <- AA_frequencies(rna_complementary_seq)
+
+    df_comp <- data.frame(
+      Length = len,
+      AminoAcid = names(freq_data_comp$frequencies),
+      Count = as.numeric(freq_data_comp$frequencies)
+    )
+    data_list_comp <- append(data_list_comp, list(df_comp))
+  }
+}
+
+# Process complementary strand data
+final_data_comp <- bind_rows(data_list_comp) %>%
+  group_by(Length, AminoAcid) %>%
+  summarise(MeanCount = mean(Count), .groups = "drop") %>%
+  group_by(Length) %>%
+  mutate(Proportion = MeanCount / sum(MeanCount) * length(sequence_lengths)) %>%
+  mutate(AminoAcid = forcats::fct_reorder(AminoAcid, Proportion, .desc = TRUE)) %>%
+  left_join(data.frame(AminoAcid = names(result_comp$tm_values), MeltTemp = result_comp$tm_values), by = "AminoAcid")
+
+
+# Plot complementary strand amino acid proportions
+ggplot(final_data_comp, aes(x = factor(Length), y = Proportion, fill = AminoAcid)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_viridis_d(option = "turbo") +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "(Complementary Strand)",
+    x = "Sequence Length",
+    y = "Amino Acids Proportion",
+    fill = "Amino Acids"
+  ) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
+
+
+# Plot complementary strand melting temperature vs proportion
+ggplot(final_data_comp, aes(x= MeltTemp, y=Proportion)) + 
+  geom_point(aes(color = AminoAcid), size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +  
+  scale_fill_viridis_d(option = "turbo") +  
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "(Complementary Strand)",
+    x = "Melting Temperature",
+    y = "Amino Acids Proportion",
+    fill = "Amino Acids"
+  ) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
+#ggsave("Cstrand_AA_distribution_MeltTemp_RandomDist.jpeg", width = 8, height = 6, dpi = 300)
+
+```
+
+
+## Comparison
+```{r}
+# Define the number of repetitions
+num_repetitions <- 100
+
+# Store the results of each repetition in a list
+results_list <- list()
+
+for (i in 1:num_repetitions) {
+  # Generate random RNA sequence
+  rna_sequence <- gen_rna_seq(500)  # Example RNA sequence
+  comp_rna_sequence <- gen_comp_rna_seq(rna_sequence)
+  
+  # Get amino acid frequencies for both sequences
+  result_original <- get_amino_acid_frequencies(rna_sequence)
+  result_complementary <- get_amino_acid_frequencies(comp_rna_sequence)
+  
+  # Ensure both result tables are using the same set of amino acids
+  all_aminos <- unique(c(names(result_original$frequencies), names(result_complementary$frequencies)))
+  
+  # Initialize the frequencies (to ensure both sequences have frequencies for all amino acids)
+  original_freq <- rep(0, length(all_aminos))
+  complementary_freq <- rep(0, length(all_aminos))
+  
+  # Set the names for easy lookup
+  names(original_freq) <- all_aminos
+  names(complementary_freq) <- all_aminos
+  
+  # Populate the frequencies from the results
+  original_freq[names(result_original$frequencies)] <- result_original$frequencies
+  complementary_freq[names(result_complementary$frequencies)] <- result_complementary$frequencies
+  
+  # Create a data frame with amino acid frequencies for both sequences
+  comparison_data <- data.frame(
+    AminoAcid = all_aminos,
+    Original_Proportion = original_freq / sum(original_freq),
+    Complementary_Proportion = complementary_freq / sum(complementary_freq)
+  )
+  
+  # Reorder AminoAcid based on the absolute difference in proportions
+  comparison_data <- comparison_data %>%
+    mutate(AminoAcid = fct_reorder(AminoAcid, abs(Original_Proportion - Complementary_Proportion), .desc = TRUE))
+  
+  # Append the result to the list
+  results_list[[i]] <- comparison_data
+}
+
+
+# Combine all the individual results into one large data frame
+long_term_data <- bind_rows(results_list)
+
+# Calculate the mean differences across all repetitions
+mean_comparison_data <- long_term_data %>%
+  group_by(AminoAcid) %>%
+  summarise(
+    Mean_Original_Proportion = mean(Original_Proportion),
+    Mean_Complementary_Proportion = mean(Complementary_Proportion),
+    Mean_Proportion_Difference = mean(abs(Original_Proportion - Complementary_Proportion)),
+    .groups = 'drop'
+  ) %>%
+  mutate(AminoAcid = fct_reorder(AminoAcid, Mean_Proportion_Difference, .desc = TRUE))
+
+# Plot the mean differences
+ggplot(mean_comparison_data, aes(y = AminoAcid, x = Mean_Proportion_Difference)) +
+  geom_bar(stat = "identity", fill = "gray", width = 0.6) +
+  labs(title = "Average Differences in Amino Acid Proportions: Original vs Complementary",
+       x = "Mean Proportion Difference (Original - Complementary)", y = "Amino Acid") +
+  scale_x_continuous() +
+  theme_minimal()
+
+ggsave("Comp_Original_strands_proportion_comparison.jpeg", width = 8, height = 6, dpi = 300)
+
+
+
+```
+
+### Table
 ```{r}
 tableau_proportions <- final_data %>%
   select(Length, AminoAcid, Proportion) %>%
@@ -157,8 +249,9 @@ print(tableau_proportions, n = Inf)
 ```
 
 It seems that the result is implied by a correlation between the number of codons 
-coding for each protein, hence the following verification, where we verifiy the 
-monotonous positive relationship between these 2 variables:
+coding for each protein and the proportion of those, hence the following 
+verification, where we verifiy the monotonous positive relationship between 
+these 2 variables:
 ```{r}
 codon_count <- data.frame(
   AminoAcid = c("Phenylalanine", "Leucine", "Isoleucine", "Methionine (Start)", 
@@ -189,4 +282,12 @@ ggplot(final_data, aes(x = CodonNumber, y = Proportion)) +
   )
 
 ```
+
+
+
+
+
+
+
+
 
