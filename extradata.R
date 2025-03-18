@@ -22,4 +22,14 @@ codonTable <- list(
   "Stop" = c("UAA", "UAG", "UGA")
 )
 
-mtData <- MeltingTemperature(codonTable)
+all_aa <- names(codonTable)
+
+mtData <- MeltingTemperature(codonTable) %>% 
+  select(AminoAcid, MeanTm) %>%
+  distinct(AminoAcid, .keep_all = TRUE)
+
+mtDistributionData_Boxplot <- MeltingTemperature(codonTable) %>%
+  ggplot(aes(x = AminoAcid, y = MeltTemp)) +
+        geom_boxplot() +
+        theme_minimal() +
+        coord_flip()

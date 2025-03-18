@@ -1,13 +1,18 @@
 # functions.R
 
-# Generate RNA sequence and its complementary with differents nitrogenous bases.
-gen_rna_seq <- function(n) {
-  bases <- c("A", "U", "C", "G")
-  paste0(sample(bases, n, replace = TRUE), collapse = "")
-}
+# Think about adding tests to functions
 
-gen_comp_rna_seq <- function(rna_seq) {
-  chartr("AUCG", "UAGC", rna_seq)
+# Generate RNA sequence and its complementary with differents nitrogenous bases.
+# complementary = TRUE implies creation of the comp 
+gen_rna_seq <- function(n, complementary = FALSE) {
+  bases <- c("A", "U", "C", "G")
+  rna_seq <- paste0(sample(bases, n, replace = TRUE), collapse = "")
+  
+  if (complementary) {
+    rna_comp_seq <- chartr("AUCG", "UAGC", rna_seq)
+    return(list(Original = rna_seq, Complementary = rna_comp_seq))
+  }
+  return(list(Original = rna_seq))
 }
 
 # Split in groups of three elements (codons)
@@ -15,7 +20,7 @@ split_into_codons <- function(sequence) {
   substring(sequence, seq(1, nchar(sequence)-2, by=3), seq(3, nchar(sequence), by=3))
 }
 
-# Translate codons to name
+# Translate codons to AA names
 translate_codon <- function(codon) {
   for (amino_acid in names(codonTable)) {
     if (codon %in% codonTable[[amino_acid]]) {
@@ -25,14 +30,14 @@ translate_codon <- function(codon) {
   return(NA)  # Return NA if the codon is not found
 }
 
-# Temperature melting computing 
+# Temperature melting computing (Easy formula)
 calculate_tm <- function(codon) {
   au_count <- str_count(codon, "A|U")
   gc_count <- str_count(codon, "G|C")
   return(2 * au_count + 4 * gc_count)
 }
 
-# Melting Temperature 
+# Get Melting Temperature Data
 MeltingTemperature <- function(codonTable){
   data.table(
     Codon = unlist(codonTable),
@@ -42,15 +47,16 @@ MeltingTemperature <- function(codonTable){
     mutate(MeanTm = mean(MeltTemp)) %>%
     ungroup()}
 
-# Amino Acids frequencies computing and tm computing
-AA_frequencies <- function(sequence) {
+# Codon to Amino Acids translation and frequencies counting (occurrences) 
+AA_frequencies <- function(sequence, stopCodon = TRUE) {
   codons <- split_into_codons(sequence)
   amino_acids <- character(0)
   stop_codons <- 0
   
   for (codon in codons) {
     aa <- translate_codon(codon)
-    if (aa == "Stop") {
+    
+    if (aa == "Stop" && stopCodon) {
       stop_codons <- stop_codons + 1
     } else {
       amino_acids <- c(amino_acids, aa)
@@ -61,36 +67,51 @@ AA_frequencies <- function(sequence) {
   list(frequencies = freq_table, stop_codons = stop_codons)
 }
 
-
-Loop_AA_data <- function(begin_size, end_size, step, n_repeats){
+# Loop of previous function with size of initial and final sequence, step between
+# each chosen length, number of repetitions of the whole process (n_repeats)
+Loop_AA_data <- function(begin_size, end_size, step, n_repeats, stopCodon = TRUE,
+                         complementary = FALSE) {
   data_list <- list()
   sequence_lengths <- seq(begin_size, end_size, by = step)
-  #print(sequence_lengths)
+  
   for (len in sequence_lengths) {
-    #print(len)
     for (rep in 1:n_repeats) {
-      #print(rep)
-      rna_sequence <- gen_rna_seq(len)
-      freq_data <- AA_frequencies(rna_sequence)
+      rna_sequences <- gen_rna_seq(len, complementary)
       
-      df <- data.frame(Length = len,
-                       AminoAcid = names(freq_data$frequencies),
-                       Count = as.numeric(freq_data$frequencies))
-      
-      data_list <- append(data_list, list(df))
+      for (seq_type in names(rna_sequences)) { # "Original" / "Complementary"
+        freq_data <- AA_frequencies(rna_sequences[[seq_type]], stopCodon)
+        
+        df <- data.frame(Length = len,
+                         AminoAcid = names(freq_data$frequencies),
+                         Count = as.numeric(freq_data$frequencies),
+                         Type = seq_type)
+        
+        data_list <- append(data_list, list(df))
+      }
     }
   }
   return(data_list)
 }
 
-
-ready2plot_data <- function(data_list){
+# Data list formatting to plot displaying, to be used with previous one to bind 
+# data and get proportions of each AA according to Length and Type (Original or 
+# Complementary), subject to be modified in the future
+ready2plot_data <- function(data_list) {
   bind_rows(data_list) %>%
-    group_by(Length, AminoAcid) %>%
-    summarise(TotalCount = sum(Count), .groups = "drop") %>%  # Take the raw sum
-    group_by(Length) %>%
-    mutate(Proportion = TotalCount / sum(TotalCount)) %>%  # Normalization correct
+    group_by(Length, AminoAcid, Type) %>% 
+    summarise(TotalCount = sum(Count), .groups = "drop") %>%
+    group_by(Length, Type) %>%  # (Original/Complementary) Normalization
+    mutate(Proportion = TotalCount / sum(TotalCount)) %>%  
+    ungroup() %>%
     mutate(AminoAcid = forcats::fct_reorder(AminoAcid, Proportion, .desc = TRUE)) 
-  #%>%  left_join(data.frame(AminoAcid = names(freq_data$tm_values), MeltTemp = freq_data$tm_values), by = "AminoAcid")
-  #%>%  left_join(tm_data, by = "AminoAcid") #to add if we want to plot according to 1st tm calc
 }
+
+# Explicit name, compute the difference of proportion between the 2 strands
+originalComplementaryComparison <- function(dataset)
+  dataset %>%
+  complete(Length, AminoAcid = all_aa, Type, fill = list(TotalCount = 0, Proportion = 0)) %>%
+  select(Length, AminoAcid, Type, Proportion) %>%
+  spread(Type, Proportion) %>%
+  rename(Original_Proportion = Original, Complementary_Proportion = Complementary) %>%
+  mutate(Diff_Proportion = abs(Original_Proportion - Complementary_Proportion))
+  
