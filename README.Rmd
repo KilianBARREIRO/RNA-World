@@ -1,0 +1,86 @@
+---
+title: "Backdown"
+output: html_document
+date: "2025-02-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Remarks : use Biostrings or seqinr packages to lighten code
+
+```{r message = FALSE, warning = FALSE}
+library(tidyverse)
+library(forcats)  # fct_reorder
+library(tibble)
+library(data.table)
+```
+
+
+```{r warning=FALSE}
+source("functions.R")
+source("extradata.R")
+source("functionsVisualisation.R")
+```
+
+# Nucleotides Sequence creation
+## Sequence itself
+```{r}
+genRnaSeq(n = 40, complementary = TRUE)
+```
+## Data creation and curation
+```{r, echo=FALSE}
+AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 1000, step = 100, n_repeats = 10, stopCodon = TRUE, complementary = TRUE) %>% 
+  ready2plot_data() %>%
+  left_join(mtData, by ="AminoAcid")
+```
+Here's a glimpse of the data we have for each length
+```{r echo=FALSE}
+print(AAproportion_Data %>% group_by(Length) %>% slice_sample(n = 1)) #random sample of one AA per chosen length
+```
+
+# Visualisation
+## Amino Acid Proportion Distribution
+```{r echo=FALSE, fig.width = 8, fig.height = 6}
+plot_aa_distribution_by_length(AAproportion_Data)
+```
+
+#### Hypothesis 1 : It appears that there is a clear correlation between the number of codons encoding each amino acid and their observed proportions. To confirm this, we assess the monotonic positive relationship between these two variables using a Spearman correlation index.
+```{r message=FALSE, echo=FALSE}
+CorrelationData <- AAproportion_Data %>%
+  mutate(CodonCount = sapply(AminoAcid, get_codon_count))
+
+# Spearman correlation index
+correlation_result <- cor(CorrelationData$Proportion, CorrelationData$CodonCount, 
+                          method = "spearman", use = "complete.obs")
+
+plotCodonRedundancyAA(CorrelationData)
+```
+
+We display a heatmap of absolute differences in the original and complementary strands frequencies
+```{r echo=FALSE, message=FALSE}
+comparison_summary <- originalComplementaryComparison(AAproportion_Data)
+displayComparison(comparison_summary)
+```
+
+#### Hypothesis 2 : The 'random' distribution of AA tends to be very close between the original and complementary strand as the size of the strand and the number of repetitions increases
+```{r echo=FALSE, message=FALSE}
+plotAAProportionsOrigComp(comparison_summary)
+```
+
+### Amino Acid Melting Temperature Distribution
+```{r echo=FALSE, message=FALSE}
+plot_aa_distribution_by_melting_temp(AAproportion_Data)
+```
+
+#### Hypothesis 3 : The data suggests a positive correlation between melting temperature and amino acid proportion. However, no definitive conclusion can be drawn, as the melting temperature calculation process is highly questionable and requires further scrutiny.
+
+
+
+
+
+
+
+
+
