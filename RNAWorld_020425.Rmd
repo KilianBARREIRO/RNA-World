@@ -24,97 +24,57 @@ source("extradata.R")
 source("functionsVisualisation.R")
 ```
 
-# We define a seq length and a number of repetitions for each sequence value
+# Nucleotides Sequence creation
+## Sequence itself
 ```{r}
-A <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, n_repeats = 10, 
-                  stopCodon = TRUE, complementary = TRUE)
+genRnaSeq(n = 40, complementary = TRUE)
 ```
-```{r echo=FALSE}
-print(head(A[[1]],5))
-```
-
-Compute proportions, reorder data for plot, and add melting temperature, that 
-don't need to be added before neither in proportions nor in the repetitions
-```{r}
-P <- ready2plot_data(A) %>%
+## Data creation and curation
+```{r, echo=FALSE}
+AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 1000, step = 100, n_repeats = 10, stopCodon = TRUE, complementary = TRUE) %>% 
+  ready2plot_data() %>%
   left_join(mtData, by ="AminoAcid")
 ```
+Here's a glimpse of the data we have for each length
 ```{r echo=FALSE}
-print(P %>% group_by(Length) %>% slice_sample(n = 1)) #random sample of one AA per chosen length
+print(AAproportion_Data %>% group_by(Length) %>% slice_sample(n = 1)) #random sample of one AA per chosen length
 ```
 
 # Visualisation
-### Amino Acid Proportion Distribution
+## Amino Acid Proportion Distribution
 ```{r echo=FALSE, fig.width = 8, fig.height = 6}
-plot_aa_distribution_by_length(P)
+plot_aa_distribution_by_length(AAproportion_Data)
+```
+
+#### Hypothesis 1 : It appears that there is a clear correlation between the number of codons encoding each amino acid and their observed proportions. To confirm this, we assess the monotonic positive relationship between these two variables using a Spearman correlation index.
+```{r message=FALSE, echo=FALSE}
+CorrelationData <- AAproportion_Data %>%
+  mutate(CodonCount = sapply(AminoAcid, get_codon_count))
+
+# Spearman correlation index
+correlation_result <- cor(CorrelationData$Proportion, CorrelationData$CodonCount, 
+                          method = "spearman", use = "complete.obs")
+
+plotCodonRedundancyAA(CorrelationData)
+```
+
+We display a heatmap of absolute differences in the original and complementary strands frequencies
+```{r echo=FALSE, message=FALSE}
+comparison_summary <- originalComplementaryComparison(AAproportion_Data)
+displayComparison(comparison_summary)
+```
+
+#### Hypothesis 2 : The 'random' distribution of AA tends to be very close between the original and complementary strand as the size of the strand and the number of repetitions increases
+```{r echo=FALSE, message=FALSE}
+plotAAProportionsOrigComp(comparison_summary)
 ```
 
 ### Amino Acid Melting Temperature Distribution
-```{r echo=FALSE}
-plot_aa_distribution_by_melting_temp(P)
+```{r echo=FALSE, message=FALSE}
+plot_aa_distribution_by_melting_temp(AAproportion_Data)
 ```
 
-## Comparison
-```{r echo=FALSE}
-comparison_summary <- originalComplementaryComparison(P)
-
-ggplot(comparison_summary, aes(x = AminoAcid, y = as.factor(Length), fill = Diff_Proportion)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient(low = "white", high = "red") +
-  labs(title = "Original/Complementary sequence proportions differences",
-       x = "Amino Acid",
-       y = "Sequence Length",
-       fill = "Difference") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-
-### Table
-```{r}
-tableau_proportions <- P %>%
-  select(Length, AminoAcid, Proportion) %>%
-  tidyr::pivot_wider(names_from = AminoAcid, values_from = Proportion)
-```
-
-```{r}
-print(tableau_proportions, n = Inf)
-```
-
-It seems that the result is implied by a correlation between the number of codons 
-coding for each protein and the proportion of those, hence the following 
-verification, where we verifiy the monotonous positive relationship between 
-these 2 variables:
-```{r}
-codon_count <- data.frame(
-  AminoAcid = c("Phenylalanine", "Leucine", "Isoleucine", "Methionine (Start)", 
-                "Valine", "Serine", "Proline", "Threonine", "Alanine", "Tyrosine",
-                "Histidine", "Glutamine", "Asparagine", "Lysine", "Aspartic Acid", 
-                "Glutamic Acid", "Cysteine", "Tryptophan", "Arginine", "Glycine"),
-  CodonNumber = c(2, 6, 3, 1, 4, 6, 4, 4, 4, 2, 
-                  2, 2, 2, 2, 2, 2, 2, 1, 6, 4)
-)
-
-final_data <- P %>%
-  left_join(codon_count, by = "AminoAcid")
-
-correlation_result <- cor(final_data$Proportion, final_data$CodonNumber, 
-                          method = "spearman", use = "complete.obs")
-print(paste("Spearman correlation:", round(correlation_result, 3)))
-
-ggplot(final_data, aes(x = CodonNumber, y = Proportion)) +
-  geom_point(aes(color = AminoAcid), size = 3) +
-  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
-  scale_color_viridis_d(option = "turbo") +
-  theme_minimal(base_size = 14) +
-  labs(
-    title = "Correlation between AA Proportion and Codon Redundancy",
-    x = "Number of Codons per Amino Acid",
-    y = "Mean Proportion",
-    color = "Amino Acid"
-  )
-
-```
+#### Hypothesis 3 : The data suggests a positive correlation between melting temperature and amino acid proportion. However, no definitive conclusion can be drawn, as the melting temperature calculation process is highly questionable and requires further scrutiny.
 
 
 

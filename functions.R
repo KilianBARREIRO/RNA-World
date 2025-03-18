@@ -4,7 +4,7 @@
 
 # Generate RNA sequence and its complementary with differents nitrogenous bases.
 # complementary = TRUE implies creation of the comp 
-gen_rna_seq <- function(n, complementary = FALSE) {
+genRnaSeq <- function(n, complementary = FALSE) {
   bases <- c("A", "U", "C", "G")
   rna_seq <- paste0(sample(bases, n, replace = TRUE), collapse = "")
   
@@ -16,7 +16,7 @@ gen_rna_seq <- function(n, complementary = FALSE) {
 }
 
 # Split in groups of three elements (codons)
-split_into_codons <- function(sequence) {
+splitIntoCodons <- function(sequence) {
   substring(sequence, seq(1, nchar(sequence)-2, by=3), seq(3, nchar(sequence), by=3))
 }
 
@@ -49,7 +49,7 @@ MeltingTemperature <- function(codonTable){
 
 # Codon to Amino Acids translation and frequencies counting (occurrences) 
 AA_frequencies <- function(sequence, stopCodon = TRUE) {
-  codons <- split_into_codons(sequence)
+  codons <- splitIntoCodons(sequence)
   amino_acids <- character(0)
   stop_codons <- 0
   
@@ -76,7 +76,7 @@ Loop_AA_data <- function(begin_size, end_size, step, n_repeats, stopCodon = TRUE
   
   for (len in sequence_lengths) {
     for (rep in 1:n_repeats) {
-      rna_sequences <- gen_rna_seq(len, complementary)
+      rna_sequences <- genRnaSeq(len, complementary)
       
       for (seq_type in names(rna_sequences)) { # "Original" / "Complementary"
         freq_data <- AA_frequencies(rna_sequences[[seq_type]], stopCodon)
@@ -105,6 +105,15 @@ ready2plot_data <- function(data_list) {
     ungroup() %>%
     mutate(AminoAcid = forcats::fct_reorder(AminoAcid, Proportion, .desc = TRUE)) 
 }
+
+# get codon redundancy for each AA
+get_codon_count <- function(aa) {
+  if (aa %in% names(codonTable)) {
+    return(length(codonTable[[aa]]))  
+  }
+  return(NA)
+}
+
 
 # Explicit name, compute the difference of proportion between the 2 strands
 originalComplementaryComparison <- function(dataset)
