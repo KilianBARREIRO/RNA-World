@@ -19,9 +19,9 @@ library(data.table)
 
 
 ```{r warning=FALSE}
-source("functions.R")
-source("extradata.R")
-source("functionsVisualisation.R")
+source("R/functions.R")
+source("R/extradata.R")
+source("R/functionsVisualisation.R")
 ```
 
 # Nucleotides Sequence creation
@@ -42,12 +42,12 @@ print(AAproportion_Data %>% group_by(Length) %>% slice_sample(n = 1)) #random sa
 
 # Visualisation
 ## Amino Acid Proportion Distribution
-```{r echo=FALSE, fig.width = 8, fig.height = 6, dpi=600}
+```{r echo=FALSE, fig.width = 8, fig.height = 6}
 plot_aa_distribution_by_length(AAproportion_Data)
 ```
 
 #### Hypothesis 1 : It appears that there is a clear correlation between the number of codons encoding each amino acid and their observed proportions. To confirm this, we assess the monotonic positive relationship between these two variables using a Spearman correlation index.
-```{r message=FALSE, echo=FALSE, dpi=600}
+```{r message=FALSE, echo=FALSE}
 CorrelationData <- AAproportion_Data %>%
   mutate(CodonCount = sapply(AminoAcid, get_codon_count))
 
@@ -59,18 +59,18 @@ plotCodonRedundancyAA(CorrelationData)
 ```
 
 We display a heatmap of absolute differences in the original and complementary strands frequencies
-```{r echo=FALSE, message=FALSE, dpi=600}
+```{r echo=FALSE, message=FALSE}
 comparison_summary <- originalComplementaryComparison(AAproportion_Data)
 displayComparison(comparison_summary)
 ```
 
 #### Hypothesis 2 : The 'random' distribution of AA tends to be very close between the original and complementary strand as the size of the strand and the number of repetitions increases
-```{r echo=FALSE, message=FALSE, dpi=600}
+```{r echo=FALSE, message=FALSE}
 plotAAProportionsOrigComp(comparison_summary)
 ```
 
 ### Amino Acid Melting Temperature Distribution
-```{r echo=FALSE, message=FALSE, dpi=600}
+```{r echo=FALSE, message=FALSE}
 plot_aa_distribution_by_melting_temp(AAproportion_Data)
 ```
 
