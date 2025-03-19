@@ -16,8 +16,14 @@ genRnaSeq <- function(n, complementary = FALSE) {
 }
 
 # Split in groups of three elements (codons)
-splitIntoCodons <- function(sequence) {
-  substring(sequence, seq(1, nchar(sequence)-2, by=3), seq(3, nchar(sequence), by=3))
+splitIntoCodons <- function(sequence, shift = 1) {
+  if (shift < 1 || shift > 3) {
+    stop("Shift must be either 1, 2, or 3.")
+  }
+  
+  lapply(sequence, function(seq) {
+    substring(seq, seq(shift, nchar(seq) - 2, by = 3), seq(shift + 2, nchar(seq), by = 3))
+  })
 }
 
 # Translate codons to AA names
@@ -48,18 +54,20 @@ MeltingTemperature <- function(codonTable){
     ungroup()}
 
 # Codon to Amino Acids translation and frequencies counting (occurrences) 
-AA_frequencies <- function(sequence, stopCodon = TRUE) {
-  codons <- splitIntoCodons(sequence)
+AA_frequencies <- function(sequence, stopCodon = TRUE, shift = 1) {
+  codons <- splitIntoCodons(sequence, shift)  # Assure-toi que cette fonction renvoie une liste de codons
   amino_acids <- character(0)
   stop_codons <- 0
   
-  for (codon in codons) {
-    aa <- translate_codon(codon)
-    
-    if (aa == "Stop" && stopCodon) {
-      stop_codons <- stop_codons + 1
-    } else {
-      amino_acids <- c(amino_acids, aa)
+  for (codon_list in codons) {  # Ici, codon_list est un élément de la liste 'codons'
+    for (codon in codon_list) {  # Si codon_list est une sous-liste, on itère sur chaque codon
+      aa <- translate_codon(codon)  # Traduit chaque codon
+      
+      if (aa == "Stop" && stopCodon) {
+        stop_codons <- stop_codons + 1
+      } else {
+        amino_acids <- c(amino_acids, aa)
+      }
     }
   }
   
@@ -70,7 +78,7 @@ AA_frequencies <- function(sequence, stopCodon = TRUE) {
 # Loop of previous function with size of initial and final sequence, step between
 # each chosen length, number of repetitions of the whole process (n_repeats)
 Loop_AA_data <- function(begin_size, end_size, step, n_repeats, stopCodon = TRUE,
-                         complementary = FALSE) {
+                         complementary = FALSE, shift = 1) {
   data_list <- list()
   sequence_lengths <- seq(begin_size, end_size, by = step)
   
@@ -79,7 +87,7 @@ Loop_AA_data <- function(begin_size, end_size, step, n_repeats, stopCodon = TRUE
       rna_sequences <- genRnaSeq(len, complementary)
       
       for (seq_type in names(rna_sequences)) { # "Original" / "Complementary"
-        freq_data <- AA_frequencies(rna_sequences[[seq_type]], stopCodon)
+        freq_data <- AA_frequencies(rna_sequences[[seq_type]], stopCodon, shift)
         
         df <- data.frame(Length = len,
                          AminoAcid = names(freq_data$frequencies),

@@ -31,10 +31,11 @@ genRnaSeq(n = 40, complementary = TRUE)
 ```
 ## Data creation and curation
 ```{r, echo=FALSE}
-AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 1000, step = 100, n_repeats = 10, stopCodon = TRUE, complementary = TRUE) %>% 
+AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, n_repeats = 10, stopCodon = TRUE, complementary = TRUE, shift = 1) %>% 
   ready2plot_data() %>%
   left_join(mtData, by ="AminoAcid")
 ```
+
 Here's a glimpse of the data we have for each length
 ```{r echo=FALSE}
 print(AAproportion_Data %>% group_by(Length) %>% slice_sample(n = 1)) #random sample of one AA per chosen length
