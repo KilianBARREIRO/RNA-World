@@ -27,8 +27,21 @@ source("R/functionsVisualisation.R")
 # Nucleotides Sequence creation
 ## Sequence itself
 ```{r}
-genRnaSeq(n = 40, complementary = TRUE)
+S <- genRnaSeq(n = 40, complementary = TRUE)
 ```
+#### Codons splitting and shift
+```{r}
+cat("Shift = 1:\n")
+print(splitIntoCodons(S, shift = 1))
+
+cat("\nShift = 2:\n")
+print(splitIntoCodons(S, shift = 2))
+
+cat("\nShift = 3:\n")
+print(splitIntoCodons(S, shift = 3))
+```
+
+
 ## Data creation and curation
 ```{r, echo=FALSE}
 AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, n_repeats = 10, stopCodon = TRUE, complementary = TRUE, shift = 1) %>% 
