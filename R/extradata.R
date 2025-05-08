@@ -23,6 +23,7 @@ codonTable <- list(
 )
 
 all_aa <- names(codonTable)
+no_stop <- names(codonTable)[-21]
 
 mtData <- MeltingTemperature(codonTable) %>% 
   select(AminoAcid, MeanTm) %>%
@@ -33,3 +34,37 @@ mtDistributionData_Boxplot <- MeltingTemperature(codonTable) %>%
         geom_boxplot() +
         theme_minimal() +
         coord_flip()
+
+aa_base_df <- lapply(names(codonTable), function(aa) {
+  codons <- codonTable[[aa]]
+  
+  gc_content <- sapply(codons, function(codon) {
+    str_count(codon, "[GC]") / 3
+  })
+  
+  au_content <- sapply(codons, function(codon) {
+    str_count(codon, "[AU]") / 3
+  })
+  
+  data.frame(
+    AminoAcid = aa,
+    GC_content = mean(gc_content),
+    AU_content = mean(au_content)
+  )
+}) %>% bind_rows()
+
+# codon_gc_weighted <- function(codon) {
+#   bases <- strsplit(codon, "")[[1]]
+#   score <- sum(bases[1:2] %in% c("G", "C")) * 0.4 + 
+#     sum(bases[3] %in% c("G", "C")) * 0.2
+#   return(score) # Max possible = 1.0
+# }
+# 
+# codon_au_weighted <- function(codon) {
+#   bases <- strsplit(codon, "")[[1]]
+#   score <- sum(bases[1:2] %in% c("A", "U")) * 0.4 + 
+#     sum(bases[3] %in% c("A", "U")) * 0.2
+#   return(score) # Max possible = 1.0
+}
+
+

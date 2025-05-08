@@ -1,5 +1,5 @@
 ---
-title: "Backdown"
+title: "Still no title"
 output: html_document
 date: "2025-02-04"
 ---
@@ -8,50 +8,88 @@ date: "2025-02-04"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Remarks : use Biostrings or seqinr packages to lighten code
+Remarks : use Biostrings or seqinr packages to lighten code \n
 To turn .Rmd into .md : 
 rmarkdown::render("README.Rmd", output_format = "github_document")
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, echo=FALSE, warning = FALSE}
 library(tidyverse)
 library(forcats)  # fct_reorder
 library(tibble)
 library(data.table)
 ```
 
-
-```{r warning=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 source("R/functions.R")
 source("R/extradata.R")
 source("R/functionsVisualisation.R")
 ```
 
 # Nucleotides Sequence creation
-## Sequence itself
+## Sequence generation
+### Uniform probability distribution ~ random
+```{r, echo=FALSE}
+cat("### Randomly generated sequence (Uniform):\n")
+print(genRnaSeq(n = 30, complementary = TRUE))
+```
+
+### GC/AU couple-favored distribution.
+##### Here we set the GC couple probability to be picked at 0.8.
+```{r, echo=FALSE}
+cat("GC-favored (gc_prob = 0.8):\n")
+print(genRnaSeq(n = 30, complementary = TRUE, wbias = TRUE, gc_prob = 0.8))
+```
+
+### A/U/G/C favorisation distribution
+#### Test Profiles
 ```{r}
-S <- genRnaSeq(n = 40, complementary = TRUE)
+profiles <- list(
+  "GC-favored (high)" = c(A = 0.1, U = 0.1, G = 0.4, C = 0.4),
+  "GC-favored (light)" = c(A = 0.2, U = 0.2, G = 0.3, C = 0.3),
+  "AU-favored (light)" = c(A = 0.3, U = 0.3, G = 0.2, C = 0.2),
+  "AU-favored (high)" = c(A = 0.4, U = 0.4, G = 0.1, C = 0.1),
+  "Balanced" = c(A = 0.25, U = 0.25, G = 0.25, C = 0.25)
+)
 ```
-#### Codons splitting and shift
+```{r, echo=FALSE, eval=FALSE}
+profile_name <- "AU-favored (high)"
+profile_values <- profiles[[profile_name]]
+
+cat("Weighted Probability Nucleotide Specific (nucleotide_profiles list):\n")
+cat(paste0(profile_name, " profile = c(A = ", profile_values["A"],
+           ", U = ", profile_values["U"],
+           ", G = ", profile_values["G"],
+           ", C = ", profile_values["C"], ")\n"))
+
+print(genRnaSeq(n = 50, custom_profile = profile_values))
+```
+
+## Codons split and shift
 ```{r, echo=FALSE}
-cat("Shift = 1:\n")
-str(splitIntoCodons(S, shift = 1))
-
-cat("\nShift = 2:\n")
-str(splitIntoCodons(S, shift = 2))
-
-cat("\nShift = 3:\n")
-str(splitIntoCodons(S, shift = 3))
+S = genRnaSeq(30)
+cat("Shift = 1 :\n"); str(splitIntoCodons(S, shift = 1))
+cat("\nShift = 2 :\n"); str(splitIntoCodons(S, shift = 2))
+cat("\nShift = 3 :\n"); str(splitIntoCodons(S, shift = 3))
+```
+```{r, echo=FALSE}
+cat("AA frequencies of original and complementary sequences :\n")
+AA_frequencies(S$Original)
+AA_frequencies(S$Complementary)
 ```
 
 
-## Data creation and curation
-```{r, echo=FALSE}
-AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, n_repeats = 10, stopCodon = TRUE, complementary = TRUE, shift = 1) %>% 
+# Data creation and curation
+```{r, echo=FALSE, message=FALSE}
+AAproportion_Data <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, 
+                                  n_repeats = 10, stopCodon = TRUE, 
+                                  complementary = TRUE, shift = 1, 
+                                  wbias = TRUE, gc_prob = 0.8, 
+                                  custom_profile = profiles[["GC-favored (high)"]]) %>% 
   ready2plot_data() %>%
   left_join(mtData, by ="AminoAcid")
 ```
 
 Here's a glimpse of the data we have for each length
-```{r echo=FALSE}
+```{r echo=FALSE, eval=FALSE}
 print(AAproportion_Data %>% group_by(Length) %>% slice_sample(n = 1)) #random sample of one AA per chosen length
 ```
 
@@ -73,9 +111,11 @@ correlation_result <- cor(CorrelationData$Proportion, CorrelationData$CodonCount
 plotCodonRedundancyAA(CorrelationData)
 ```
 
-We display a heatmap of absolute differences in the original and complementary strands frequencies
+We display a heatmap of absolute differences in the original and complementary
+strands frequencies, a positive difference means a higher proportion of AA in the
+original strand.
 ```{r echo=FALSE, message=FALSE}
-comparison_summary <- originalComplementaryComparison(AAproportion_Data)
+comparison_summary <- originalComplementaryComparison(AAproportion_Data, remove_stop = TRUE)
 displayComparison(comparison_summary)
 ```
 
@@ -85,17 +125,216 @@ plotAAProportionsOrigComp(comparison_summary)
 ```
 
 ### Amino Acid Melting Temperature Distribution
+#### Hypothesis 3 : The data suggests a positive correlation between melting temperature and amino acid proportion. However, no definitive conclusion can be drawn, as the melting temperature calculation process is highly questionable and requires further scrutiny.
 ```{r echo=FALSE, message=FALSE}
 plot_aa_distribution_by_melting_temp(AAproportion_Data)
 ```
 
-#### Hypothesis 3 : The data suggests a positive correlation between melting temperature and amino acid proportion. However, no definitive conclusion can be drawn, as the melting temperature calculation process is highly questionable and requires further scrutiny.
+
+## Comparison of different profiles
+#### AA level display
+```{r, message=FALSE}
+for (pname in names(profiles)) {
+  cat("\n=== Plot for profile:", pname, "===\n")
+  
+  data <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, 
+                       n_repeats = 10, stopCodon = TRUE, 
+                       complementary = FALSE, shift = 1,
+                       custom_profile = profiles[[pname]]) %>%
+          ready2plot_data() %>%
+          left_join(mtData, by = "AminoAcid")
+  
+  p <- plot_aa_distribution_by_length(data) + 
+       ggtitle(paste("AA Distribution –", pname))
+  
+  #ggsave(paste0("AA_Distribution_Ori", gsub(" ", "_", pname), ".jpeg"), plot = p, width = 8, height = 6)
+  
+  print(p)
+}
+```
+
+#### Mean AA level display
+```{r, message=FALSE, eval=FALSE}
+all_data <- list()
+
+for (pname in names(profiles)) {
+  cat("\n=== Processing profile:", pname, "===\n")
+  
+  data <- Loop_AA_data(begin_size = 100, end_size = 500, step = 50, 
+                       n_repeats = 10, stopCodon = TRUE, 
+                       complementary = TRUE, shift = 1,
+                       custom_profile = profiles[[pname]]) %>%
+    ready2plot_data() %>%
+    left_join(mtData, by = "AminoAcid") %>%
+    left_join(aa_base_df, by = "AminoAcid") %>% 
+    dplyr::mutate(Profile = pname)
+  
+  all_data[[pname]] <- data  
+}
+
+combined_data <- dplyr::bind_rows(all_data)
+
+#Reorganize profiles display
+combined_data$Profile <- factor(combined_data$Profile, 
+                                levels = c("GC-favored (high)", 
+                                           "GC-favored (light)",
+                                           "Balanced",
+                                           "AU-favored (light)",
+                                           "AU-favored (high)"))
+
+ggplot(combined_data, aes(x = Length, y = Proportion, fill = Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Profile, ncol = 5) +
+  theme_minimal() +
+  labs(title = "AA Distribution by Sequence Length and Profile",
+       y = "Proportion (Mean)", x = "Sequence Length") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### AA distribution is linked to it's richness in GC or AU probability distrib
+we can use aa_base_df (function in extradata.R) which has the mean value 
+(give more thought if weird results) of GC and AU proportion of each AA, think 
+to adapt it in case some codons appears more often IRL.
+Watch out for specific cases where we have a perfect 0.5 per couple (AU GC),(for
+example Threonine), it might be interesting to give more weight to the first two
+nucleobasis of the codon, as we know they are more important in the translation.
+```{r, eval=FALSE, echo=FALSE}
+combined_data <- combined_data %>%
+  pivot_longer(cols = c(GC_content, AU_content), 
+               names_to = "Content_Type", 
+               values_to = "Content")
+
+ggplot(combined_data) +
+  geom_point(aes(x = Content, y = Proportion, color = Content, size = Proportion), alpha = 0.7) +  # Gradient de couleur pour content
+  scale_color_gradient(low = "#0000FF", high = "#FF0000") +  # Gradient du bleu au rouge
+  scale_size_continuous(range = c(2, 6)) +  # Taille des points en fonction de la proportion d'AA
+  facet_wrap(~ Profile, ncol = 5) +  # Séparation des profils
+  theme_minimal() +
+  labs(title = "Content (GC & AU) vs Proportion of Amino Acids",
+       x = "Content", 
+       y = "Proportion of Amino Acids",
+       color = "Content Value") +  # Légende pour le gradient de couleur
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "right",  # Position de la légende
+        strip.background = element_rect(fill = "lightgrey", color = "black", size = 1),  # Fond coloré pour les profils
+        strip.text = element_text(face = "bold", color = "black"),  # Texte en gras pour les titres des profils
+        panel.grid.major = element_line(color = "gray", size = 0.5),  # Lignes de grille majeures
+        panel.grid.minor = element_line(color = "lightgray", size = 0.25))
+```
+```{r}
+ggplot(combined_data) +
+  geom_point(aes(x = GC_content, y = Proportion, color = GC_content, size = Proportion), 
+             alpha = 0.7) + 
+  scale_color_gradient(low = "#f7fbff", high = "#08306b") + 
+  scale_size_continuous(range = c(2, 6)) +
+  facet_wrap(~ Profile, ncol = 5) +
+  theme_minimal() +
+  labs(title = "GC vs Amino Acids Proportion",
+       x = "GC Proportion", 
+       y = "Proportion of Amino Acids") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "bottom", 
+        strip.background = element_rect(fill = "lightblue", color = "black", size = 1),  
+        strip.text = element_text(face = "bold", color = "black"), 
+        panel.grid.major = element_line(color = "gray", size = 0.5),  
+        panel.grid.minor = element_line(color = "lightgray", size = 0.25)) 
+
+
+ggplot(combined_data) +
+  geom_point(aes(x = AU_content, y = Proportion, color = AU_content, size = Proportion), 
+             alpha = 0.7) + 
+  scale_color_gradient(low = "#ffede0", high = "#d73027") +  
+  scale_size_continuous(range = c(2, 6)) +  
+  facet_wrap(~ Profile, ncol = 5) +
+  theme_minimal() +
+  labs(title = "AU vs Amino Acids Proportion",
+       x = "AU Proportion", 
+       y = "Proportion of Amino Acids") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "bottom", 
+        strip.background = element_rect(fill = "lightcoral", color = "black", size = 1), 
+        strip.text = element_text(face = "bold", color = "black"), 
+        panel.grid.major = element_line(color = "gray", size = 0.5),  
+        panel.grid.minor = element_line(color = "lightgray", size = 0.25)) 
+
+ggsave("AUvsAAproportion.jpeg", plot = last_plot(), width = 8, height = 6)
+
+```
 
 
 
 
+```{r}
+aa_proportion_gc_au <- 
+  Loop_AA_data(begin_size = 100, end_size = 500, step = 50, 
+                                  n_repeats = 10, stopCodon = TRUE, 
+                                  complementary = TRUE, shift = 1, 
+                                  wbias = TRUE, gc_prob = 0.8, 
+                                  custom_profile = profiles[["GC-favored (high)"]]) %>% 
+  ready2plot_data() %>%
+  left_join(mtData, by ="AminoAcid") %>%
+  left_join(aa_base_df, by = "AminoAcid")
 
 
+ggplot(aa_proportion_gc_au) +
+  geom_point(aes(x = GC_content, y = Proportion, color = "GC Content"), size = 3) +  # Points pour GC content
+  geom_point(aes(x = AU_content, y = Proportion, color = "AU Content"), size = 3) +  # Points pour AU content
+  scale_color_manual(values = c("GC Content" = "blue", "AU Content" = "red")) +  # Couleurs personnalisées
+  theme_minimal() +
+  labs(title = "GC Content vs AU Content vs Proportion of Amino Acids",
+       x = "Content", 
+       y = "Proportion of Amino Acid") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
 
+```{r}
+# Ajustement de la courbe exponentielle pour GC
+fit_gc <- nls(Proportion ~ a * exp(-b * round(GC_content)), data = aa_proportion_gc_au, start = list(a = 1, b = 0.01))
 
+# Ajustement de la courbe de loi de puissance pour AU
+fit_au <- nls(Proportion ~ a * AU_content^b, data = aa_proportion_gc_au, start = list(a = 1, b = -1))
+
+# Obtenir les prédictions pour GC et AU
+aa_proportion_gc_au$GC_pred <- predict(fit_gc, newdata = aa_proportion_gc_au)
+aa_proportion_gc_au$AU_pred <- predict(fit_au, newdata = aa_proportion_gc_au)
+
+# Visualisation
+ggplot(aa_proportion_gc_au) +
+  geom_point(aes(x = GC_content, y = Proportion, color = "GC Content"), size = 3) +  # Points pour GC content
+  geom_point(aes(x = AU_content, y = Proportion, color = "AU Content"), size = 3) +  # Points pour AU content
+  geom_line(aes(x = GC_content, y = GC_pred), color = "blue", linetype = "dashed") +  # Courbe ajustée pour GC
+  geom_line(aes(x = AU_content, y = AU_pred), color = "red", linetype = "dashed") +  # Courbe ajustée pour AU
+  scale_color_manual(values = c("GC Content" = "blue", "AU Content" = "red")) +  # Couleurs personnalisées
+  theme_minimal() +
+  labs(title = "GC Content vs AU Content vs Proportion of Amino Acids",
+       x = "Content", 
+       y = "Proportion of Amino Acid") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+```{r}
+fit_gc_exp <- nls(Proportion ~ a * exp(b * round(GC_content)), data = aa_proportion_gc_au, start = list(a = 1, b = 0.01))
+
+# Affichage des résultats du modèle
+summary(fit_gc_exp)
+
+aa_proportion_gc_au$Predicted <- predict(fit_gc_exp, newdata = aa_proportion_gc_au)
+
+SST <- sum((aa_proportion_gc_au$Proportion - mean(aa_proportion_gc_au$Proportion))^2)  # Somme des carrés totaux
+SSE <- sum((aa_proportion_gc_au$Proportion - aa_proportion_gc_au$Predicted)^2)  # Somme des carrés des erreurs
+R2 <- 1 - (SSE / SST)  # Coefficient de détermination
+
+# Graphique avec courbe exponentielle ajustée et R²
+ggplot(aa_proportion_gc_au, aes(x = GC_content, y = Proportion)) +
+  geom_point(aes(color = "GC Content"), size = 3) +
+  geom_line(aes(x = GC_content, y = Predicted), color = "blue", size = 1) +  # Courbe exponentielle
+  scale_color_manual(values = c("GC Content" = "blue")) +
+  theme_minimal() +
+  labs(title = "GC Content vs Proportion of Amino Acids",
+       subtitle = paste("R² = ", round(R2, 3)),
+       x = "GC Content", 
+       y = "Proportion of Amino Acid") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
 

@@ -54,12 +54,26 @@ plotCodonRedundancyAA <- function(data){
 }
 
 # Compute the comparison data between the original and complementary strands
-plotAAProportionsOrigComp <- function(comparison_summary){
-  comparison_summary %>%
-    ggplot(aes(x = Length, y = Diff_Proportion)) +
-    geom_point(aes(color = "Difference"), size = 3) +
-    geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
-    scale_color_manual(values = c("Difference" = "blue")) +
+plotAAProportionsOrigComp <- function(comparison_summary) {
+  # Régression linéaire
+  model_lm <- lm(abs(Diff_Proportion) ~ Length, data = comparison_summary)
+  r2_lm <- summary(model_lm)$r.squared
+  
+  # Régression exponentielle (modèle log-linéaire)
+  model_exp <- lm(log(abs(Diff_Proportion)) ~ Length, data = comparison_summary)
+  r2_exp <- summary(model_exp)$r.squared
+  comparison_summary$pred_exp <- exp(predict(model_exp))  # Prédictions exponentielles
+  
+  # Régression logarithmique
+  model_log <- lm(abs(Diff_Proportion) ~ log(Length), data = comparison_summary)
+  r2_log <- summary(model_log)$r.squared
+  
+  # Graphique avec les trois modèles
+  ggplot(comparison_summary, aes(x = Length, y = abs(Diff_Proportion))) +
+    geom_point(color = "blue", size = 3) +
+    geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +  # Modèle linéaire
+    geom_line(aes(y = pred_exp), color = "darkgreen", linewidth = 1.2, linetype = "solid") +  # Modèle exponentiel
+    geom_line(aes(y = predict(model_log)), color = "darkorange", linewidth = 1.2, linetype = "solid") +  # Modèle logarithmique
     theme_minimal(base_size = 14) +
     labs(
       title = "Difference in AA Proportions Original vs Complementary",
@@ -68,11 +82,19 @@ plotAAProportionsOrigComp <- function(comparison_summary){
     ) +
     theme(
       legend.position = "none",
-      legend.title = element_text(size = 12, face = "bold"),
       axis.title = element_text(face = "bold", size = 12),
       axis.text.x = element_text(angle = 45, hjust = 1),
       plot.title = element_text(face = "bold", hjust = 0.5)
-    )
+    ) +
+    annotate("text", x = max(comparison_summary$Length) * 0.7, 
+             y = max(abs(comparison_summary$Diff_Proportion)) * 0.9,
+             label = paste("Linear R² =", round(r2_lm, 3)), color = "black", size = 5, fontface = "bold") +
+    annotate("text", x = max(comparison_summary$Length) * 0.7, 
+             y = max(abs(comparison_summary$Diff_Proportion)) * 0.8,
+             label = paste("Exp. R² =", round(r2_exp, 3)), color = "darkgreen", size = 5, fontface = "bold") +
+    annotate("text", x = max(comparison_summary$Length) * 0.7, 
+             y = max(abs(comparison_summary$Diff_Proportion)) * 0.7,
+             label = paste("Log R² =", round(r2_log, 3)), color = "darkorange", size = 5, fontface = "bold")
 }
 
 
@@ -97,12 +119,19 @@ plot_aa_distribution_by_melting_temp <- function(P) {
 }
 
 displayComparison <- function(compData) {
-  ggplot(comparison_summary, aes(x = AminoAcid, y = as.factor(Length), fill = Diff_Proportion)) +
+  ggplot(compData, aes(x = AminoAcid, y = as.factor(Length), fill = Diff_Proportion)) +
     geom_tile(color = "white") +
-    scale_fill_gradient(low = "white", high = "red") +
-    labs(title = "Original/Complementary sequence proportions differences",
+    scale_fill_gradient2(
+      low = "blue",
+      mid = "white",
+      high = "darkred",
+      midpoint = 0
+    ) +
+    labs(title = "Original/Complementary Sequence Proportion Differences",
          x = "Amino Acid",
          y = "Sequence Length",
          fill = "Difference") +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))}
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
